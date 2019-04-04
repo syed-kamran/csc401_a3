@@ -25,7 +25,19 @@ def log_b_m_x(m, x, myTheta, preComputedForM=[]):
         for 'm' that applies to all x outside of this function.
         If you do this, you pass that precomputed component in preComputedForM
     '''
-    print('TODO')
+    d = x.shape[0]
+    precompute = - d/2 * np.log(2*np.pi)
+    precompute -= 1/2 * np.log(
+        np.prod(
+            np.multiply(myTheta.Sigma[m], myTheta.Sigma[m])
+        )
+    )
+    prob = -np.sum(np.divide(
+        np.multiply(x - myTheta.mu[m], x - myTheta.mu[m]),
+        2*np.multiply(myTheta.Sigma[m], myTheta.Sigma[m]))
+    )
+    # print('log_b_m_x', np.exp(prob + precompute))
+    return prob + precompute
 
 
 def log_p_m_x(m, x, myTheta):
@@ -33,7 +45,15 @@ def log_p_m_x(m, x, myTheta):
         vector x, and model myTheta
         See equation 2 of handout
     '''
-    print('TODO')
+    num = 0
+    denum = 0
+    for i in range(myTheta.omega.shape[0]):
+        prob = myTheta.omega[i][0] * np.exp(log_b_m_x(i, x, myTheta))
+        if i == m:
+            num += prob
+        denum += prob
+    # print('log_p_m_x', np.log(num/denum))
+    return np.log(num/denum)
 
 
 def logLik(log_Bs, myTheta):
@@ -51,14 +71,76 @@ def logLik(log_Bs, myTheta):
 
         See equation 3 of the handout
     '''
-    print('TODO')
+    # iterate over all samples
+    total_prob = 0
+    for i in range(log_Bs.shape[1]):
+        sample_prob = 0
+        for j in range(log_Bs.shape[0]):
+            sample_prob += myTheta.omega[j][0] * np.exp(log_Bs[j][i])
+            try:
+                if sample_prob < 0:
+                    raise ValueError
+            except ValueError:
+                print('Sample prob is: ', sample_prob)
+                print('Omega is: ', myTheta.omega[j][0])
+        total_prob += np.log(sample_prob)
+    return total_prob
 
 
 def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
     ''' Train a model for the given speaker. Returns the theta (omega, mu,
         sigma)'''
     myTheta = theta(speaker, M, X.shape[1])
-    print('TODO')
+    # Initialize myTheta (set omega values to 1/M)
+    myTheta.omega = 1/M * np.ones((M, 1))
+    # Initialize myTheta (set Sigma to Identity)
+    myTheta.Sigma = M * np.ones((M, X.shape[1]))
+    # Initialize myTheta (set mu to a random vector from the data)
+    myTheta.mu = X[:M][:]
+    # Implement Training
+    i = 0
+    prev_l = -np.inf
+    improvement = np.inf
+    while i < maxIter and improvement >= epsilon:
+        print (i)
+        # Compute Intermediate Results
+        log_Bs = np.zeros((M, X.shape[0]))
+        log_Ps = np.zeros((M, X.shape[0]))
+        for j in range(M):
+            for k in range(X.shape[0]):
+                # print(j,k)
+                log_Bs[j][k] = log_b_m_x(j, X[k], myTheta)
+                log_Ps[j][k] = log_p_m_x(j, X[k], myTheta)
+        L = logLik(log_Bs, myTheta)
+        print (L)
+        # Update Parameters
+        print('new Omega is: ', np.sum(
+            np.exp(log_Ps), axis=1).reshape(M, 1)/X.shape[0]
+        )
+        myTheta.omega = np.sum(np.exp(log_Ps), axis=1).reshape(M, 1)/X.shape[0]
+        mu_update = np.zeros((M, X.shape[1]))
+        for j in range(M):
+            for k in range(X.shape[0]):
+                mu_update[j] += np.exp(log_Ps[j][k])*X[k]
+        myTheta.mu = np.divide(
+            mu_update, np.sum(np.exp(log_Ps), axis=1).reshape(M, 1)
+        )
+        sigma_update = np.zeros((M, X.shape[1]))
+        for j in range(M):
+            for k in range(X.shape[0]):
+                sigma_update[j] += np.exp(
+                    log_Ps[j][k]) * np.multiply(X[k], X[k])
+        sigma_update = np.divide(
+            sigma_update, np.sum(np.exp(log_Ps), axis=1).reshape(M, 1)
+        )
+        sigma_update = sigma_update - np.multiply(myTheta.mu, myTheta.mu)
+        myTheta.sigma = sigma_update
+        improvement = L - prev_l
+        prev_l = L
+        i += 1
+        print(myTheta.omega)
+        print(myTheta.mu)
+        print(myTheta.sigma)
     return myTheta
 
 
@@ -119,7 +201,7 @@ if __name__ == "__main__":
             trainThetas.append(train(speaker, X, M, epsilon, maxIter))
 
     # evaluate
-    numCorrect = 0
-    for i in range(0, len(testMFCCs)):
-        numCorrect += test(testMFCCs[i], i, trainThetas, k)
-    accuracy = 1.0*numCorrect/len(testMFCCs)
+    # numCorrect = 0
+    # for i in range(0, len(testMFCCs)):
+    #     numCorrect += test(testMFCCs[i], i, trainThetas, k)
+    # accuracy = 1.0*numCorrect/len(testMFCCs)
