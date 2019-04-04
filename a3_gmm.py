@@ -161,7 +161,25 @@ def test(mfcc, correctID, models, k=5):
         exponent) does not matter
     '''
     bestModel = -1
-    print('TODO')
+    log_likelihoods = []
+    log_names = {}
+    for i in range(len(models)):
+        M = models[i].omega.shape[0]
+        log_Bs = np.zeros((M, 1))
+        for i in range(M):
+            log_Bs[i][1] = log_b_m_x(i, mfcc, models[i])
+        likelihood = logLik(log_Bs, models[i])
+        log_likelihoods.append(likelihood)
+        log_names[likelihood] = [i, models[i].name]
+    log_likelihoods = sorted(log_likelihoods, reverse=True)
+    print('Correct Id: {}, Correct Name {}'.format(
+        correctID, models[correctID].name)
+    )
+    for i in range(k):
+        print('{} {}'.format(
+            models[i].name, log_likelihoods[i])
+        )
+    bestModel = log_names[log_likelihoods[0]][0]
     return 1 if (bestModel == correctID) else 0
 
 
@@ -201,7 +219,7 @@ if __name__ == "__main__":
             trainThetas.append(train(speaker, X, M, epsilon, maxIter))
 
     # evaluate
-    # numCorrect = 0
-    # for i in range(0, len(testMFCCs)):
-    #     numCorrect += test(testMFCCs[i], i, trainThetas, k)
-    # accuracy = 1.0*numCorrect/len(testMFCCs)
+    numCorrect = 0
+    for i in range(0, len(testMFCCs)):
+        numCorrect += test(testMFCCs[i], i, trainThetas, k)
+    accuracy = 1.0*numCorrect/len(testMFCCs)
