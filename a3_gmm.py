@@ -29,19 +29,19 @@ def log_b_m_x(m, x, myTheta, preComputedForM=[]):
         d = x.shape[0]
         prob = -np.sum(np.divide(
             np.multiply(x - myTheta.mu[m], x - myTheta.mu[m]),
-            2*np.multiply(myTheta.Sigma[m], myTheta.Sigma[m]))
+            2*myTheta.Sigma[m])
         )
     else:
         d = x.shape[1]
         prob = -np.sum(np.divide(
             np.multiply(x - myTheta.mu[m], x - myTheta.mu[m]),
-            2*np.multiply(myTheta.Sigma[m], myTheta.Sigma[m])),
+            2*myTheta.Sigma[m]),
             axis=1
         )
     precompute = - d/2 * np.log(2*np.pi)
     precompute -= 1/2 * np.log(
         np.prod(
-            np.multiply(myTheta.Sigma[m], myTheta.Sigma[m])
+            myTheta.Sigma[m]
         )
     )
     # print('log_b_m_x', np.exp(prob + precompute))
