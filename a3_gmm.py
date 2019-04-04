@@ -25,16 +25,24 @@ def log_b_m_x(m, x, myTheta, preComputedForM=[]):
         for 'm' that applies to all x outside of this function.
         If you do this, you pass that precomputed component in preComputedForM
     '''
-    d = x.shape[0]
+    if x.ndim == 1:
+        d = x.shape[0]
+        prob = -np.sum(np.divide(
+            np.multiply(x - myTheta.mu[m], x - myTheta.mu[m]),
+            2*np.multiply(myTheta.Sigma[m], myTheta.Sigma[m]))
+        )
+    else:
+        d = x.shape[1]
+        prob = -np.sum(np.divide(
+            np.multiply(x - myTheta.mu[m], x - myTheta.mu[m]),
+            2*np.multiply(myTheta.Sigma[m], myTheta.Sigma[m])),
+            axis=1
+        )
     precompute = - d/2 * np.log(2*np.pi)
     precompute -= 1/2 * np.log(
         np.prod(
             np.multiply(myTheta.Sigma[m], myTheta.Sigma[m])
         )
-    )
-    prob = -np.sum(np.divide(
-        np.multiply(x - myTheta.mu[m], x - myTheta.mu[m]),
-        2*np.multiply(myTheta.Sigma[m], myTheta.Sigma[m]))
     )
     # print('log_b_m_x', np.exp(prob + precompute))
     return prob + precompute
@@ -107,31 +115,28 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
         log_Bs = np.zeros((M, X.shape[0]))
         log_Ps = np.zeros((M, X.shape[0]))
         for j in range(M):
-            for k in range(X.shape[0]):
-                # print(j,k)
-                log_Bs[j][k] = log_b_m_x(j, X[k], myTheta)
-                log_Ps[j][k] = log_p_m_x(j, X[k], myTheta)
+            log_Bs[j][:] = log_b_m_x(j, X, myTheta)
+            log_Ps[j][:] = log_p_m_x(j, X, myTheta)
         L = logLik(log_Bs, myTheta)
         print (L)
         # Update Parameters
         print('new Omega is: ', np.sum(
             np.exp(log_Ps), axis=1).reshape(M, 1)/X.shape[0]
         )
-        myTheta.omega = np.sum(np.exp(log_Ps), axis=1).reshape(M, 1)/X.shape[0]
+        probs = np.sum(np.exp(log_Ps), axis=1).reshape(M, 1)
+        myTheta.omega = probs/X.shape[0]
         mu_update = np.zeros((M, X.shape[1]))
-        for j in range(M):
-            for k in range(X.shape[0]):
-                mu_update[j] += np.exp(log_Ps[j][k])*X[k]
-        myTheta.mu = np.divide(
-            mu_update, np.sum(np.exp(log_Ps), axis=1).reshape(M, 1)
-        )
         sigma_update = np.zeros((M, X.shape[1]))
         for j in range(M):
             for k in range(X.shape[0]):
+                mu_update[j] += np.exp(log_Ps[j][k])*X[k]
                 sigma_update[j] += np.exp(
                     log_Ps[j][k]) * np.multiply(X[k], X[k])
+        myTheta.mu = np.divide(
+            mu_update, probs
+        )
         sigma_update = np.divide(
-            sigma_update, np.sum(np.exp(log_Ps), axis=1).reshape(M, 1)
+            sigma_update, probs
         )
         sigma_update = sigma_update - np.multiply(myTheta.mu, myTheta.mu)
         myTheta.sigma = sigma_update
@@ -172,6 +177,7 @@ def test(mfcc, correctID, models, k=5):
         log_likelihoods.append(likelihood)
         log_names[likelihood] = [i, models[i].name]
     log_likelihoods = sorted(log_likelihoods, reverse=True)
+    # Fix
     print('Correct Id: {}, Correct Name {}'.format(
         correctID, models[correctID].name)
     )
