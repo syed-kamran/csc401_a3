@@ -120,9 +120,9 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
         L = logLik(log_Bs, myTheta)
         print (L)
         # Update Parameters
-        print('new Omega is: ', np.sum(
-            np.exp(log_Ps), axis=1).reshape(M, 1)/X.shape[0]
-        )
+        # print('new Omega is: ', np.sum(
+        #     np.exp(log_Ps), axis=1).reshape(M, 1)/X.shape[0]
+        # )
         probs = np.sum(np.exp(log_Ps), axis=1).reshape(M, 1)
         myTheta.omega = probs/X.shape[0]
         mu_update = np.zeros((M, X.shape[1]))
@@ -143,9 +143,9 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
         improvement = L - prev_l
         prev_l = L
         i += 1
-        print(myTheta.omega)
-        print(myTheta.mu)
-        print(myTheta.sigma)
+        # print(myTheta.omega)
+        # print(myTheta.mu)
+        # print(myTheta.sigma)
     return myTheta
 
 
