@@ -4,6 +4,7 @@ import numpy as np
 import os
 import fnmatch
 import random
+import pickle
 
 
 dataDir = '/u/cs401/A3/data/'
@@ -124,13 +125,13 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
             sigma_update, probs
         )
         sigma_update = sigma_update - np.multiply(myTheta.mu, myTheta.mu)
-        myTheta.sigma = sigma_update
+        myTheta.Sigma = sigma_update
         improvement = L - prev_l
         prev_l = L
         i += 1
         # print(myTheta.omega)
         # print(myTheta.mu)
-        # print(myTheta.sigma)
+        # print(myTheta.Sigma)
     return myTheta
 
 
@@ -153,11 +154,13 @@ def test(mfcc, correctID, models, k=5):
     bestModel = -1
     log_likelihoods = []
     log_names = {}
+    T = mfcc.shape[0]
     for i in range(len(models)):
         M = models[i].omega.shape[0]
-        log_Bs = np.zeros((M, 1))
-        for i in range(M):
-            log_Bs[i][1] = log_b_m_x(i, mfcc, models[i])
+        log_Bs = np.zeros((M, T))
+        for m in range(M):
+            print (log_b_m_x(m, mfcc, models[i]))
+            log_Bs[m][:] = log_b_m_x(m, mfcc, models[i])
         likelihood = logLik(log_Bs, models[i])
         log_likelihoods.append(likelihood)
         log_names[likelihood] = [i, models[i].name]
@@ -175,6 +178,7 @@ def test(mfcc, correctID, models, k=5):
 
 
 if __name__ == "__main__":
+    use_cache = True
 
     trainThetas = []
     testMFCCs = []
@@ -206,10 +210,17 @@ if __name__ == "__main__":
                     os.path.join(dataDir, speaker, file)
                 )
                 X = np.append(X, myMFCC, axis=0)
-
-            trainThetas.append(train(speaker, X, M, epsilon, maxIter))
+            if not use_cache:
+                trainThetas.append(train(speaker, X, M, epsilon, maxIter))
+    if not use_cache:
+        with open('trainThetas.pkl', 'wb') as f:
+            pickle.dump(trainThetas, f)
+    else:
+        with open('trainThetas.pkl', 'rb') as f:
+            trainThetas = pickle.load(f)
 
     # evaluate
+
     numCorrect = 0
     for i in range(0, len(testMFCCs)):
         numCorrect += test(testMFCCs[i], i, trainThetas, k)

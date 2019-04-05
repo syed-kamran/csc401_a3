@@ -2,8 +2,8 @@ import os
 import numpy as np
 import re
 
-# dataDir = '/u/cs401/A3/data/'
-dataDir = '/Users/kamran/Documents/CSC401/csc401_a3/data/'
+dataDir = '/u/cs401/A3/data/'
+# dataDir = '/Users/kamran/Documents/CSC401/csc401_a3/data/'
 
 
 def Levenshtein(r, h):
@@ -86,6 +86,7 @@ def Levenshtein(r, h):
 if __name__ == "__main__":
     punc_to_remove = r'([!"#$%&\\()*+,-/:;<=>?@^_`{|}~])'
     for root, dirs, files in os.walk(dataDir):
+        f_out = open('asrDiscussion.txt', 'w')
         for speaker in dirs:
             # Reading the lines
             ref_fh = open(
@@ -118,7 +119,7 @@ if __name__ == "__main__":
                 ).lower().split()[2:]
                 g_score = Levenshtein(ref, google)
                 k_score = Levenshtein(ref, kaldi)
-                g_output = '{} Google {} {} S:{}, I:{}, D:{}'.format(
+                g_output = '{} Google {} {} S:{}, I:{}, D:{}\n'.format(
                     speaker,
                     i,
                     g_score[0],
@@ -127,7 +128,7 @@ if __name__ == "__main__":
                     g_score[3]
                 )
                 print(g_output)
-                k_output = '{} Kaldi {} {} S:{}, I:{}, D:{}'.format(
+                k_output = '{} Kaldi {} {} S:{}, I:{}, D:{}\n'.format(
                     speaker,
                     i,
                     k_score[0],
@@ -136,3 +137,7 @@ if __name__ == "__main__":
                     k_score[3]
                 )
                 print(k_output)
+                f_out.write(g_output)
+                f_out.write(k_output)
+        f_out.close()
+
