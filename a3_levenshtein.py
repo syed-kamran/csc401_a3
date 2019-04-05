@@ -1,6 +1,8 @@
+from scipy import stats
 import os
 import numpy as np
 import re
+
 
 dataDir = '/u/cs401/A3/data/'
 # dataDir = '/Users/kamran/Documents/CSC401/csc401_a3/data/'
@@ -87,6 +89,8 @@ if __name__ == "__main__":
     punc_to_remove = r'([!"#$%&\\()*+,-/:;<=>?@^_`{|}~])'
     for root, dirs, files in os.walk(dataDir):
         f_out = open('asrDiscussion.txt', 'w')
+        kaldi_wers = []
+        google_wers = []
         for speaker in dirs:
             # Reading the lines
             ref_fh = open(
@@ -128,6 +132,7 @@ if __name__ == "__main__":
                     g_score[3]
                 )
                 print(g_output)
+                google_wers.append(g_score[0])
                 k_output = '{} Kaldi {} {} S:{}, I:{}, D:{}\n'.format(
                     speaker,
                     i,
@@ -137,7 +142,18 @@ if __name__ == "__main__":
                     k_score[3]
                 )
                 print(k_output)
+                kaldi_wers.append(k_score[0])
                 f_out.write(g_output)
                 f_out.write(k_output)
+
+        f_out.write(
+            'Google Average: {} Standard Deviation: {}, Kaldi Average: {}, Standard Deviation: {}\n'.format(
+                np.average(google_wers),
+                np.std(google_wers),
+                np.average(kaldi_wers),
+                np.std(kaldi_wers)
+            )
+        )
+
         f_out.close()
 

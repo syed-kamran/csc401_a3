@@ -1,0 +1,1 @@
+Google Average: nan Standard Deviation: nan, Kaldi Average: nan, Standard Deviation: nan
