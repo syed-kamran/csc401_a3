@@ -1,8 +1,10 @@
 from sklearn.model_selection import train_test_split
+from scipy.misc import logsumexp
 import numpy as np
 import os
 import fnmatch
 import random
+
 
 # dataDir = '/u/cs401/A3/data/'
 dataDir = '/Users/kamran/Documents/CSC401/csc401_a3/data/'
@@ -55,13 +57,15 @@ def log_p_m_x(m, x, myTheta):
     '''
     num = 0
     denum = 0
+    probs = np.empty((myTheta.omega.shape[0], x.shape[0]))
     for i in range(myTheta.omega.shape[0]):
-        prob = myTheta.omega[i][0] * np.exp(log_b_m_x(i, x, myTheta))
-        if i == m:
-            num += prob
-        denum += prob
+        probs[i] = log_b_m_x(i, x, myTheta)
+    denum = logsumexp(probs, axis=0, b=myTheta.omega)
+    num = np.log(myTheta.omega[m][0]) + probs[m]
+    # raise Exception
+    # print(len(probs[0]))
     # print('log_p_m_x', np.log(num/denum))
-    return np.log(num/denum)
+    return num-denum
 
 
 def logLik(log_Bs, myTheta):
@@ -102,7 +106,7 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
     # Initialize myTheta (set omega values to 1/M)
     myTheta.omega = 1/M * np.ones((M, 1))
     # Initialize myTheta (set Sigma to Identity)
-    myTheta.Sigma = M * np.ones((M, X.shape[1]))
+    myTheta.Sigma = M*np.ones((M, X.shape[1]))
     # Initialize myTheta (set mu to a random vector from the data)
     myTheta.mu = X[:M][:]
     # Implement Training
