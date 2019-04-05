@@ -1,13 +1,13 @@
 from sklearn.model_selection import train_test_split
-from scipy.misc import logsumexp
+from scipy.special import logsumexp
 import numpy as np
 import os
 import fnmatch
 import random
 
 
-# dataDir = '/u/cs401/A3/data/'
-dataDir = '/Users/kamran/Documents/CSC401/csc401_a3/data/'
+dataDir = '/u/cs401/A3/data/'
+# dataDir = '/Users/kamran/Documents/CSC401/csc401_a3/data/'
 
 
 class theta:
@@ -55,8 +55,6 @@ def log_p_m_x(m, x, myTheta):
         vector x, and model myTheta
         See equation 2 of handout
     '''
-    num = 0
-    denum = 0
     probs = np.empty((myTheta.omega.shape[0], x.shape[0]))
     for i in range(myTheta.omega.shape[0]):
         probs[i] = log_b_m_x(i, x, myTheta)
@@ -84,19 +82,8 @@ def logLik(log_Bs, myTheta):
         See equation 3 of the handout
     '''
     # iterate over all samples
-    total_prob = 0
-    for i in range(log_Bs.shape[1]):
-        sample_prob = 0
-        for j in range(log_Bs.shape[0]):
-            sample_prob += myTheta.omega[j][0] * np.exp(log_Bs[j][i])
-            try:
-                if sample_prob < 0:
-                    raise ValueError
-            except ValueError:
-                print('Sample prob is: ', sample_prob)
-                print('Omega is: ', myTheta.omega[j][0])
-        total_prob += np.log(sample_prob)
-    return total_prob
+    log_probs = logsumexp(log_Bs, b=myTheta.omega, axis=0)
+    return np.sum(log_probs)
 
 
 def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
@@ -123,19 +110,13 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
             log_Ps[j][:] = log_p_m_x(j, X, myTheta)
         L = logLik(log_Bs, myTheta)
         print (L)
-        # Update Parameters
-        # print('new Omega is: ', np.sum(
-        #     np.exp(log_Ps), axis=1).reshape(M, 1)/X.shape[0]
-        # )
+
         probs = np.sum(np.exp(log_Ps), axis=1).reshape(M, 1)
         myTheta.omega = probs/X.shape[0]
-        mu_update = np.zeros((M, X.shape[1]))
-        sigma_update = np.zeros((M, X.shape[1]))
-        for j in range(M):
-            for k in range(X.shape[0]):
-                mu_update[j] += np.exp(log_Ps[j][k])*X[k]
-                sigma_update[j] += np.exp(
-                    log_Ps[j][k]) * np.multiply(X[k], X[k])
+
+        mu_update = np.dot(np.exp(log_Ps), X)
+        sigma_update = np.dot(np.exp(log_Ps), np.multiply(X,X))
+
         myTheta.mu = np.divide(
             mu_update, probs
         )
