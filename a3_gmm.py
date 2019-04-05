@@ -7,8 +7,8 @@ import random
 import pickle
 
 
-dataDir = '/u/cs401/A3/data/'
-# dataDir = '/Users/kamran/Documents/CSC401/csc401_a3/data/'
+# dataDir = '/u/cs401/A3/data/'
+dataDir = '/Users/kamran/Documents/CSC401/csc401_a3/data/'
 
 
 class theta:
@@ -102,7 +102,7 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
     prev_l = -np.inf
     improvement = np.inf
     while i < maxIter and improvement >= epsilon:
-        print (i)
+        print(i)
         # Compute Intermediate Results
         log_Bs = np.zeros((M, X.shape[0]))
         log_Ps = np.zeros((M, X.shape[0]))
@@ -110,13 +110,13 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
             log_Bs[j][:] = log_b_m_x(j, X, myTheta)
             log_Ps[j][:] = log_p_m_x(j, X, myTheta)
         L = logLik(log_Bs, myTheta)
-        print (L)
+        print(L)
 
         probs = np.sum(np.exp(log_Ps), axis=1).reshape(M, 1)
         myTheta.omega = probs/X.shape[0]
 
         mu_update = np.dot(np.exp(log_Ps), X)
-        sigma_update = np.dot(np.exp(log_Ps), np.multiply(X,X))
+        sigma_update = np.dot(np.exp(log_Ps), np.multiply(X, X))
 
         myTheta.mu = np.divide(
             mu_update, probs
@@ -159,19 +159,18 @@ def test(mfcc, correctID, models, k=5):
         M = models[i].omega.shape[0]
         log_Bs = np.zeros((M, T))
         for m in range(M):
-            print (log_b_m_x(m, mfcc, models[i]))
             log_Bs[m][:] = log_b_m_x(m, mfcc, models[i])
         likelihood = logLik(log_Bs, models[i])
         log_likelihoods.append(likelihood)
         log_names[likelihood] = [i, models[i].name]
     log_likelihoods = sorted(log_likelihoods, reverse=True)
     # Fix
-    print('Correct Id: {}, Correct Name {}'.format(
-        correctID, models[correctID].name)
+    print('Actual ID: {}'.format(
+        models[correctID].name)
     )
     for i in range(k):
         print('{} {}'.format(
-            models[i].name, log_likelihoods[i])
+            log_names[log_likelihoods[i]][1], log_likelihoods[i])
         )
     bestModel = log_names[log_likelihoods[0]][0]
     return 1 if (bestModel == correctID) else 0
