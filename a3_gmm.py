@@ -7,8 +7,8 @@ import random
 import pickle
 
 
-# dataDir = '/u/cs401/A3/data/'
-dataDir = '/Users/kamran/Documents/CSC401/csc401_a3/data/'
+dataDir = '/u/cs401/A3/data/'
+# dataDir = '/Users/kamran/Documents/CSC401/csc401_a3/data/'
 
 
 class theta:
@@ -56,7 +56,10 @@ def log_p_m_x(m, x, myTheta):
         vector x, and model myTheta
         See equation 2 of handout
     '''
-    probs = np.empty((myTheta.omega.shape[0], x.shape[0]))
+    if x.ndim == 1:
+        probs = np.empty((myTheta.omega.shape[0], 1))
+    else:
+        probs = np.empty((myTheta.omega.shape[0], x.shape[0]))
     for i in range(myTheta.omega.shape[0]):
         probs[i] = log_b_m_x(i, x, myTheta)
     denum = logsumexp(probs, axis=0, b=myTheta.omega)
@@ -177,7 +180,7 @@ def test(mfcc, correctID, models, k=5):
 
 
 if __name__ == "__main__":
-    use_cache = True
+    use_cache = False
 
     trainThetas = []
     testMFCCs = []
@@ -224,3 +227,4 @@ if __name__ == "__main__":
     for i in range(0, len(testMFCCs)):
         numCorrect += test(testMFCCs[i], i, trainThetas, k)
     accuracy = 1.0*numCorrect/len(testMFCCs)
+    print(accuracy)
